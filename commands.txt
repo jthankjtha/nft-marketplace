@@ -1,0 +1,16 @@
+npx truffle init
+Change in truffle-config.js
+Solidity plugin download (v 0.0.135)
+IRC721 github contract from google
+
+npx truffle compile (cobnverts sol code to byte code for EVM which Eth network uses)
+
+npx ganache-cli (for running contract locally)
+
+npx truffle migrate - to deploy the contract (--reset for rerunning all deployment again)
+npx truffle console (to interact with smart contract)
+		2. const m = await Market.deployed()    
+		3. m.getListing(1)
+		4. m.listToken(accounts[], 1, 100)
+		
+		5. npm install @openzeppelin/contracts
