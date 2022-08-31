@@ -71,4 +71,6 @@ contract BreitlexNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ow
         _setTokenURI(_tokenIdCounter.current(), tokenURI_);
         _tokenIdCounter.increment();
     }
+
+    
 }
