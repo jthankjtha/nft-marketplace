@@ -1,0 +1,147 @@
+/**
+ * @file HephaestusDemo.sol
+ * @author 
+ * @date created 
+ * @date last modified 
+ */
+
+//SPDX-License-Identifier: MIT
+ 
+pragma solidity ^0.8.2;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract hephaestusDemo is IERC721Receiver {
+    
+
+
+    enum LoanState{INITIALIZED,NFTTRANSFERRED,APPROVED,ACTIVE,INACTIVE,CLOSED,DEFAULTED}
+
+    address payable public lenderWalletAddress;
+    address payable public borrowerWalletAddress;
+    address public nftAddress;
+    string tokenID;
+    uint256 loanId;
+    uint256 Id=0;
+    uint256 totalEmiPaid=0;
+    uint256 totalEmiExpected;
+    uint256 maxEMIToBeDefaulted;
+    bool customerCancel = false;
+    bool bankCancel = false;
+    LoanState public loanState;
+
+    //empty constructor for now
+    constructor(){}
+
+    struct Loan{
+        uint256 LoanId;				
+        uint256 TotalEmiPaid;
+        uint256 TotalEmiExpected;
+        bool EMIDefaulted;
+        uint256 MaxEMIToBeDefaulted;
+        LoanState state;
+        address lenderWalletAddress;
+        address borrowerWalletAddress;
+        uint256 tokenId;
+    }
+    Loan public loanRecord;
+    mapping(uint  => Loan) public loanMapping;
+
+
+
+    //Invoked By Bank when loan is approved/initilized
+    // Add a record into mapping and update loan state
+    function initializeLoan(uint256 _loanId, uint256 _totalEmiExpected, uint256 _maxEMIToBeDefaulted, address customerAddress,uint256 tokenId)
+    public
+    onlyBank
+    {  
+        loanRecord = Loan(_loanId,totalEmiPaid,_totalEmiExpected,false,_maxEMIToBeDefaulted,LoanState.INITIALIZED,lenderWalletAddress,customerAddress,tokenId);
+        loanMapping[Id++] = loanRecord;
+        loanState = LoanState.CLOSED;
+    }
+
+    function verifyToken(address account, uint256 tokenId) 
+    public 
+    view 
+    returns(bool)    
+    {
+        address tokenOwner = ERC721(account).ownerOf(tokenId);
+        
+    }
+
+    function depositNFT(address _NFTAddress, uint256 _TokenID)
+        public
+        inLoanState(LoanState.APPROVED)
+        onlyBorrower
+    {
+        //nftAddress = _NFTAddress;
+        //tokenID = _TokenID;
+        //ERC721(nftAddress).safeTransferFrom(msg.sender, address(this), tokenID);
+        //projectState = ProjectState.nftDeposited;
+        //loan state ?
+    }
+
+    function onERC721Received( address operator, address from, uint256 tokenId, bytes calldata data ) public override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+    
+    function transferNFTBackToCustomer()
+        public
+        payable
+        inLoanState(LoanState.CLOSED)
+    {
+        borrowerWalletAddress = payable(msg.sender);
+        //Change the state
+    }
+
+    //Need to work on below
+    /*function getLoanState() 
+    public
+    view
+    return (LoanState)
+    {
+        return loanState;
+    }*/
+
+    function setLoanState(LoanState _loanState) 
+    public
+    onlyBank
+    {
+        loanState=_loanState;
+    }
+
+	modifier inLoanState(LoanState _state) {
+		require(loanState == _state);
+		_;
+	}
+    
+   	modifier condition(bool _condition) {
+		require(_condition);
+		_;
+	}
+
+	modifier onlyBorrower() {
+		require(msg.sender == borrowerWalletAddress);
+		_;
+	}
+
+	modifier onlyBank() {
+		require(msg.sender == lenderWalletAddress);
+		_;
+	}
+	
+    function getBalance()
+        public
+        view
+        returns (uint256 balance)
+    {
+        return address(this).balance;
+    }
+} 
