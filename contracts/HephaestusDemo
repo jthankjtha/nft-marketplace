@@ -101,14 +101,14 @@ contract hephaestusDemo is IERC721Receiver {
         //Change the state
     }
 
-    //Need to work on below
-    /*function getLoanState() 
+    //Return state of loan by load ID
+    function getLoanState(uint256 _loanId) 
     public
     view
     return (LoanState)
     {
-        return loanState;
-    }*/
+        return loanRecord[_loanId].state;
+    }
 
     function setLoanState(LoanState _loanState) 
     public
@@ -132,7 +132,7 @@ contract hephaestusDemo is IERC721Receiver {
 		_;
 	}
 
-	modifier onlyBank() {
+	modifier onlyLender() {
 		require(msg.sender == lenderWalletAddress);
 		_;
 	}
