@@ -64,7 +64,7 @@ contract hephaestusDemo is IERC721Receiver {
     {  
         loanRecord = Loan(_loanId,totalEmiPaid,_totalEmiExpected,false,_maxEMIToBeDefaulted,LoanState.INITIALIZED,lenderWalletAddress,customerAddress,tokenId);
         loanMapping[Id++] = loanRecord;
-        loanState = LoanState.CLOSED;
+        loanState = LoanState.INITIALIZED;
     }
 
     function verifyToken(address account, uint256 tokenId) 
