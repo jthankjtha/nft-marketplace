@@ -22,21 +22,7 @@ contract HephaestusDemo is IERC721Receiver {
     
     enum LoanState{INITIALIZED, NFTTRANSFERRED, APPROVED, ACTIVE, INACTIVE, CLOSED, DEFAULTED}
 
-    //address payable public lenderWalletAddress;
-    //address payable public borrowerWalletAddress;
-    //address public nftAddress;
-    //string tokenID;
-    //uint256 loanId;
-    //uint256 Id=0;
-    //uint256 totalEmiPaid=0;
-    //uint256 totalEmiExpected;
-    //uint256 maxEMIToBeDefaulted;
-    //bool customerCancel = false;
-    //bool bankCancel = false;
-    //LoanState public loanState;
-
-    //empty constructor for now
-    //constructor(){}
+    address public nftAddress;
 
     struct Loan{
         uint256 loanId;				
@@ -98,6 +84,24 @@ contract HephaestusDemo is IERC721Receiver {
         return this.onERC721Received.selector;
     }
 
+    //Invoked by Bank when customer pays EMI.
+    function emiPaid(address _NFTAddress, uint256 _loanId)
+    external
+    //onlyLender
+    {    
+	//validations
+    require(_loanMapping[_loanId].loanState==LoanState.ACTIVE);
+    Loan memory loan = _loanMapping[_loanId];
+    loan.totalEmiPaid = loan.totalEmiPaid++;
+	
+    nftAddress = _NFTAddress;
+	if(loan.totalEmiPaid >= loan.totalEmiExpected){
+		loan.loanState = LoanState.CLOSED;
+		
+		//transfer the NFT back to user
+        ERC721(nftAddress).safeTransferFrom(address(this), loan.borrowerWalletAddress, loan.tokenId);
+	}
+}
     /*function verifyToken(address account, uint256 tokenId) 
     public 
     view 
