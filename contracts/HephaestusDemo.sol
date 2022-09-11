@@ -22,60 +22,54 @@ contract HephaestusDemo is IERC721Receiver {
     
     enum LoanState{INITIALIZED, NFTTRANSFERRED, APPROVED, ACTIVE, INACTIVE, CLOSED, DEFAULTED}
 
-    //address payable public lenderWalletAddress;
-    //address payable public borrowerWalletAddress;
-    //address public nftAddress;
-    //string tokenID;
-    //uint256 loanId;
-    //uint256 Id=0;
-    //uint256 totalEmiPaid=0;
-    //uint256 totalEmiExpected;
-    //uint256 maxEMIToBeDefaulted;
-    //bool customerCancel = false;
-    //bool bankCancel = false;
-    //LoanState public loanState;
-
-    //empty constructor for now
-    //constructor(){}
-
     struct Loan{
         uint256 loanId;				
-        uint256 totalEmiPaid;
-        uint256 totalEmiExpected;
-        uint256 emiDefaulted;
-        uint256 maxEMIToBeDefaulted;
-        address lenderWalletAddress;
+        address bankWalletAddress;
         address borrowerWalletAddress;
         uint256 tokenId;
         LoanState loanState;
     }
 
-    Loan public loanRecord;
     uint private _loanId = 1000;
     //Store
     mapping(uint  => Loan) private _loanMapping;
 
+    //Step-1 : OwnerOf/Verify : Customer
+    //Step-2 : Apporve : Customer
+    //Step-3 : Deposit NFT : Customer
+    //Step-4 : Create Loan : Customer
+    //Step-5 : Loan Close : Bank
 
     //Invoked By Bank when loan is approved/initilized
-    // Add a record into mapping and update loan state
-    function initializeLoan(uint256 _totalEmiExpected, uint256 _maxEMIToBeDefaulted, address _borrowerWalletAddress, uint256 _tokenId)
-    external
+    //Add a record into mapping and update loan state
+    function createLoan(address _bankWalletAddress,  address _borrowerWalletAddress, uint256 _tokenId)
+    private 
+    returns(uint)
     //onlyBank
     {  
         //increment the id
         Loan memory loan = Loan(
             ++_loanId,
-            0,
-            _totalEmiExpected,         
-            0,
-            _maxEMIToBeDefaulted, 
-            msg.sender,             //this will give the address automatically
+            _bankWalletAddress,             //this will give the address automatically
             _borrowerWalletAddress, 
             _tokenId,
             LoanState.INITIALIZED
         );
 
         _loanMapping[_loanId] = loan;
+        return _loanId;
+    }
+
+
+    //Customer deposits NFT to escrow contract
+    function depositNFT(address _bankWalletAddress,address _borrowerWalletAddress,address _NFTAddress, uint256 tokenId)
+    external
+    {
+        //validations    
+        ERC721(_NFTAddress).safeTransferFrom(_borrowerWalletAddress, address(this), tokenId);
+        uint256 _generatedLoanId = createLoan(_bankWalletAddress, _borrowerWalletAddress,tokenId);
+        Loan storage loan = _loanMapping[_generatedLoanId];
+        loan.loanState = LoanState.ACTIVE;
     }
 
     function getLoanDetail(uint256 _loanID) public view returns(Loan memory){  //view makes the operation completely free
@@ -98,29 +92,23 @@ contract HephaestusDemo is IERC721Receiver {
         return this.onERC721Received.selector;
     }
 
-    /*function verifyToken(address account, uint256 tokenId) 
-    public 
-    view 
-    returns(bool)    
-    {
-        address tokenOwner = ERC721(account).ownerOf(tokenId);
-        
+    //Invoked by Bank when loan is closed.
+    function loanClose(address _NFTAddress, uint256 loanId)
+    external
+    {    
+        //validations
+        //require(_loanMapping[_loanId].loanState==LoanState.ACTIVE);
+        Loan storage loan = _loanMapping[loanId];
+        loan.loanState = LoanState.CLOSED;
+
+        //transfer NFT back to user
+        ERC721(_NFTAddress).safeTransferFrom(address(this), loan.borrowerWalletAddress, loan.tokenId);
     }
 
-    function depositNFT(address _NFTAddress, uint256 tokenId)
-        public
-        inLoanState(LoanState.APPROVED)
-        onlyBorrower
-    {
-        //nftAddress = _NFTAddress;
-        //tokenID = _TokenID;
-        //ERC721(nftAddress).safeTransferFrom(msg.sender, address(this), tokenID);
-        //projectState = ProjectState.nftDeposited;
-        //loan state ?
-    }
+
 
     
-    
+    /*
     function transferNFTBackToCustomer()
         public
         payable
@@ -173,6 +161,5 @@ contract HephaestusDemo is IERC721Receiver {
     {
         return address(this).balance;
     }
-
     */
 } 
